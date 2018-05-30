@@ -21,6 +21,7 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 	private ResourceContainer<?> parent;
 	private SftpATTRS attrs;
 	private Session session;
+	protected boolean absolute;
 
 	protected SftpResource(ResourceContainer<?> parent, ChannelSftp channel, Session session, URI uri, SftpATTRS attrs) {
 		this.parent = parent;
@@ -28,6 +29,7 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 		this.session = session;
 		this.attrs = attrs;
 		this.uri = uri;
+		this.absolute = parent == null ? uri.getPath().startsWith("//") : ((SftpDirectory) parent).absolute; 
 	}
 	
 	@Override
@@ -51,7 +53,9 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 	protected String getRemotePath() {
 		String path = this.uri.getPath();
 		// skip leading slash
-		path = path.substring(1);
+		if (!absolute) {
+			path = path.substring(1);
+		}
 		return path;
 	}
 	
@@ -76,7 +80,10 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 	public void rename(String name) throws IOException {
 		URI newUri = URIUtils.getChild(URIUtils.getParent(getUri()), name);
 		SftpDirectory parent = (SftpDirectory) getParent();
-		String newPath = newUri.getPath().substring(1);
+		String newPath = newUri.getPath();
+		if (!absolute) {
+			newPath = newPath.substring(1);
+		}
 		String oldName = getName();
 		try {
 			channel.rename(getRemotePath(), newPath);

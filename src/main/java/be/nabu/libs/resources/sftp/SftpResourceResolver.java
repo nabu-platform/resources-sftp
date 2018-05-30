@@ -91,7 +91,6 @@ public class SftpResourceResolver implements ResourceResolver {
 						resourceReadableContainer.close();
 					}
 				}
-				System.out.println("adding identity!");
 				jsch.addIdentity(UUID.randomUUID().toString().replace("-", ""), privateBytes, publicBytes, password == null ? new byte[0] : password.getBytes());
 			//	jsch.addIdentity(key);
 			}
@@ -125,7 +124,6 @@ public class SftpResourceResolver implements ResourceResolver {
 				if (uri.getUserInfo() != null) {
 					uri = new URI(uri.getScheme(), uri.getHost() + (uri.getPort() < 0 ? "" : ":" + uri.getPort()), uri.getPath(), null, null);
 				}
-				System.out.println("attempting: " + uri.getPath());
 				if (uri.getPath() != null && !uri.getPath().equals("/")) {
 					// skip the absolute leading slash
 					String path = uri.getPath().substring(1);
