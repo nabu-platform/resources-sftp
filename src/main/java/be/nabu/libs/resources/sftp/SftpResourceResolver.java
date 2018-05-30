@@ -6,6 +6,7 @@ import java.security.Principal;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSch;
@@ -14,9 +15,13 @@ import com.jcraft.jsch.SftpATTRS;
 
 import be.nabu.libs.authentication.api.principals.BasicPrincipal;
 import be.nabu.libs.authentication.impl.AuthenticationUtils;
+import be.nabu.libs.resources.ResourceFactory;
+import be.nabu.libs.resources.ResourceReadableContainer;
 import be.nabu.libs.resources.URIUtils;
+import be.nabu.libs.resources.api.ReadableResource;
 import be.nabu.libs.resources.api.Resource;
 import be.nabu.libs.resources.api.ResourceResolver;
+import be.nabu.utils.io.IOUtils;
 
 public class SftpResourceResolver implements ResourceResolver {
 
@@ -38,10 +43,57 @@ public class SftpResourceResolver implements ResourceResolver {
 			// can support resource-based resolving of keystore
 			// add keystore password + alias for key
 			Map<String, List<String>> queryProperties = URIUtils.getQueryProperties(uri);
-			if (queryProperties != null && queryProperties.get("key") != null) {
-				for (String key : queryProperties.get("key")) {
-					jsch.addIdentity(key);
+			if (queryProperties != null && queryProperties.get("privateKey") != null) {
+				String password = null;
+				if (queryProperties.get("password") != null) {
+					password = queryProperties.get("password").get(0);
 				}
+				
+				String privateKey = queryProperties.get("privateKey").get(0);
+				// we default to the same as would the jsch library/ssh itself
+				String publicKey = queryProperties.get("publicKey") == null ? null : queryProperties.get("publicKey").get(0);
+				
+				URI privateUri = new URI(URIUtils.encodeURI(privateKey));
+				// we default to file system
+				if (privateUri.getScheme() == null) {
+					privateUri = new URI(URIUtils.encodeURI("file:" + privateKey));
+				}
+				
+				URI publicUri = publicKey == null ? null : new URI(URIUtils.encodeURI(publicKey));
+				if (publicUri != null && publicUri.getScheme() == null) {
+					publicUri = new URI(URIUtils.encodeURI("file:" + publicKey));
+				}
+				
+				Resource privateResource = ResourceFactory.getInstance().resolve(privateUri, null);
+				if (privateResource == null) {
+					throw new IOException("Could not find private key: " + privateUri);
+				}
+				Resource publicResource = publicUri == null ? null : ResourceFactory.getInstance().resolve(publicUri, null);
+				if (publicUri != null && publicResource == null) {
+					throw new IOException("Could not find public key: " + publicUri);
+				}
+				
+				byte [] privateBytes, publicBytes = null;
+				ResourceReadableContainer resourceReadableContainer = new ResourceReadableContainer((ReadableResource) privateResource);
+				try {
+					privateBytes = IOUtils.toBytes(resourceReadableContainer);
+				}
+				finally {
+					resourceReadableContainer.close();
+				}
+				
+				if (publicResource != null) {
+					resourceReadableContainer = new ResourceReadableContainer((ReadableResource) publicResource);
+					try {
+						publicBytes = IOUtils.toBytes(resourceReadableContainer);
+					}
+					finally {
+						resourceReadableContainer.close();
+					}
+				}
+				System.out.println("adding identity!");
+				jsch.addIdentity(UUID.randomUUID().toString().replace("-", ""), privateBytes, publicBytes, password == null ? new byte[0] : password.getBytes());
+			//	jsch.addIdentity(key);
 			}
 			
 			session = jsch.getSession(
@@ -73,6 +125,7 @@ public class SftpResourceResolver implements ResourceResolver {
 				if (uri.getUserInfo() != null) {
 					uri = new URI(uri.getScheme(), uri.getHost() + (uri.getPort() < 0 ? "" : ":" + uri.getPort()), uri.getPath(), null, null);
 				}
+				System.out.println("attempting: " + uri.getPath());
 				if (uri.getPath() != null && !uri.getPath().equals("/")) {
 					// skip the absolute leading slash
 					String path = uri.getPath().substring(1);
