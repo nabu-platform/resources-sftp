@@ -4,7 +4,7 @@
 	<groupId>be.nabu.libs.resources</groupId>
 	<artifactId>resources-sftp</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0-SNAPSHOT</version>
+	<version>${be.nabu.libs.resources-resources-sftp-version}</version>
 	<name>resources-sftp</name>
 	<url>http://maven.apache.org</url>
 	
