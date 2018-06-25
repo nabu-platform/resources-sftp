@@ -22,7 +22,7 @@ import be.nabu.libs.resources.api.ReadableResource;
 import be.nabu.libs.resources.api.Resource;
 import be.nabu.libs.resources.api.ResourceResolver;
 import be.nabu.utils.io.IOUtils;
-
+// TODO: perhaps add a query param "absolute" which indicates whether the path is absolute or relative? currently always relative unless double /
 public class SftpResourceResolver implements ResourceResolver {
 
 	private static List<String> defaultSchemes = Arrays.asList(new String[] { "sftp" });
