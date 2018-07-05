@@ -33,7 +33,7 @@ public class SftpResourceResolver implements ResourceResolver {
 			principal = AuthenticationUtils.toPrincipal(uri);
 		}
 		JSch jsch = new JSch();
-		
+
 		Session session = null;
 		ChannelSftp channel = null;
 		try {
@@ -117,7 +117,7 @@ public class SftpResourceResolver implements ResourceResolver {
 			
 			channel = (ChannelSftp) session.openChannel("sftp");
 			channel.connect();
-			
+
 			try {
 				// if we have user info, strip it from the URI when passing it along, otherwise it will end up everywhere
 				// also strip query parameters
