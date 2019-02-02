@@ -119,14 +119,14 @@ public class SftpResourceResolver implements ResourceResolver {
 			channel.connect();
 
 			try {
-				// if we have user info, strip it from the URI when passing it along, otherwise it will end up everywhere
-				// also strip query parameters
+				boolean absolute = SftpResource.isAbsolute(uri);
+				// once the connection is set up, we no longer need the user information
 				if (uri.getUserInfo() != null) {
-					uri = new URI(uri.getScheme(), uri.getHost() + (uri.getPort() < 0 ? "" : ":" + uri.getPort()), uri.getPath(), null, null);
+					uri = new URI(uri.getScheme(), null, uri.getHost(), uri.getPort(), uri.getPath(), uri.getQuery(), uri.getFragment());
 				}
 				if (uri.getPath() != null && !uri.getPath().equals("/")) {
 					// skip the absolute leading slash
-					String path = uri.getPath().substring(1);
+					String path = absolute ? uri.getPath().replaceAll("^[/]{2,}", "/") : uri.getPath().substring(1);
 					SftpATTRS lstat = channel.lstat(path);
 					if (lstat != null) {
 						if (lstat.isDir()) {

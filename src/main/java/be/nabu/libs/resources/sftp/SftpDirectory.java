@@ -1,5 +1,6 @@
 package be.nabu.libs.resources.sftp;
 
+import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.net.URI;
 import java.util.HashMap;
@@ -107,7 +108,12 @@ public class SftpDirectory extends SftpResource implements ManageableContainer<S
 			}
 		}
 		else {
-			
+			try {
+				getChannel().put(new ByteArrayInputStream(new byte[0]), getRemotePath() + "/" + name);
+			}
+			catch (SftpException e) {
+				throw new IOException(e);
+			}
 		}
 		resetCache();
 		return getChild(name);

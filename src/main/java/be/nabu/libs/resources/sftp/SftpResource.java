@@ -3,6 +3,8 @@ package be.nabu.libs.resources.sftp;
 import java.io.Closeable;
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
+import java.util.Map;
 
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.Session;
@@ -29,7 +31,20 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 		this.session = session;
 		this.attrs = attrs;
 		this.uri = uri;
-		this.absolute = parent == null ? uri.getPath().startsWith("//") : ((SftpDirectory) parent).absolute; 
+		this.absolute = parent == null ? isAbsolute(uri) : ((SftpDirectory) parent).absolute; 
+	}
+
+	public static boolean isAbsolute(URI uri) {
+		if (uri.getPath().startsWith("//")) {
+			return true;
+		}
+		else {
+			Map<String, List<String>> queryProperties = URIUtils.getQueryProperties(uri);
+			if (queryProperties.get("absolute") != null && queryProperties.get("absolute").size() > 0 && "true".equals(queryProperties.get("absolute").get(0))) {
+				return true;
+			}
+		}
+		return false;
 	}
 	
 	@Override
@@ -56,7 +71,7 @@ abstract public class SftpResource implements Resource, Closeable, LocatableReso
 		if (!absolute) {
 			path = path.substring(1);
 		}
-		return path;
+		return path.isEmpty() && this instanceof ResourceContainer ? "." : path;
 	}
 	
 	@Override
